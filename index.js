@@ -11,7 +11,7 @@ app.post('/getSellReport', (req, res) => {
     var mysql = require('mysql');
     var StartDate = req.body.StartDate;
     var EndDate = req.body.EndDate;
-    console.log("Node" +StartDate, EndDate);
+    console.log("Node" + StartDate, EndDate);
     const sql = `SELECT r.RecID, r.PayTime, SUM(rl.Qty) as Qty, r.TotalPrice, Sum((p.PricePerUnit - p.CostPerUnit) * rl.Qty) as Profit, r.Vat, Sum(p.CostPerUnit * rl.Qty) as Cost 
     FROM receipt r 
     JOIN receipt_list rl 
@@ -35,80 +35,34 @@ app.post('/getSellReport', (req, res) => {
     connection.end();
 });
 
-// app.post('/requestReceipt', (req, res) => {
-//     const { recID } = req.body;
-//     var mysql      = require('mysql');
-//     var connection = mysql.createConnection({
-//         host     : 'localhost',
-//         user     : 'root',
-//         password : '',
-//         database : 'myStore'
-//     });
-//     connection.connect();
+app.post('/payerDetail', (req, res) => {
+    const { ReceiptID } = req.body;
+    var mysql = require('mysql');
+    var connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: '',
+        database: 'myStore'
+    });
 
-//     connection.query('SELECT pd.ProName, pd.PricePerUnit, p.PayerTaxID, p.PayerFName, p.PayerLName, p.PayerTel, p.PayerAddress, p.PayerProvince, p.PayerPostcode, rl.ProID, rl.Qty, r.PayTime, r.Status FROM Receipt r JOIN Payer p ON r.PayerId = p.PayerId JOIN Receipt_list rl ON rl.RecID = r.RecID JOIN Product pd ON pd.ProID = rl.ProID WHERE r.RecID = ? AND r.Status = "Paid" OR r.Status = "Completed"', [recID], function (error, results, fields) {
-//         if (error) throw error;
-//         res.json(results);
-//     });
-//     connection.end();
-// });
-
-// app.post('/popularProduct', (req, res) => {
-//     const { startTime, endTime } = req.body;
-//     var mysql      = require('mysql');
-//     var connection = mysql.createConnection({
-//         host     : 'localhost',
-//         user     : 'root',
-//         password : '',
-//         database : 'myStore'
-//     });
-//     connection.connect();
-
-//     connection.query('SELECT COUNT(rl.ProID) AS ProID , p.ProName, SUM(rl.Qty) AS Sum FROM RECEIPT_LIST rl JOIN PRODUCT p ON p.ProID = rl.ProID JOIN RECEIPT r ON rl.RecID = r.RecID WHERE r.Status = "Completed" AND r.PayTime BETWEEN ? AND ? GROUP BY p.ProID;', [startTime, endTime], function (error, results, fields) {
-//         if (error) throw error;
-//         res.json(results);
-//     });
-//     connection.end();
-// });
-
-// app.post('/addTypeProduct', (req, res) => {
-//     const { TypeName } = req.body;
-//     console.log(TypeName);
-//     var mysql      = require('mysql');
-//     var connection = mysql.createConnection({
-//         host     : 'localhost',
-//         user     : 'root',
-//         password : '',
-//         database : 'myStore'
-//     });
-//     connection.connect();
-
-//     connection.query('INSERT INTO PRODUCT_TYPE (TypeName) VALUES (?)', [TypeName], function (error, results, fields) {
-//         if (error) throw error;
-//         res.json(results);
-//     });
-//     connection.end();
-// });
-
-// app.get('/TypeProduct', (req, res) => {
-//     // res.send('Hello World!!!');
-//     // res.json({ message: 'Hello World!!!' });
-//     var mysql      = require('mysql');
-//     var connection = mysql.createConnection({
-//         host     : 'localhost',
-//         user     : 'root',
-//         password : '',
-//         database : 'myStore'
-//     });
-
-//     connection.connect();
-//     connection.query('SELECT * FROM PRODUCT_TYPE', function (error, results, fields) {
-//         if (error) throw error;
-//             res.json(results);
-//     });
-//     connection.end();
-// });
-
+    connection.connect();
+    const query = `
+        SELECT r.PayTime, r.TotalPrice, r.Vat,
+            p.PayerFName, p.PayerLName, p.PayerTel, p.PayerAddress, p.PayerProvince, p.PayerPostcode, p.TAG, p.PayerTaxID,
+            pd.ProName, pd.Author, pd.PricePerUnit, rl.Qty
+        FROM RECEIPT r 
+        JOIN PAYER p ON r.PayerID = p.PayerID 
+        JOIN RECEIPT_LIST rl ON r.RecID = rl.RecID
+        JOIN PRODUCT pd ON rl.ProID = pd.ProID
+        WHERE r.RecID = ?`;
+    connection.query(query, [ReceiptID], function (error, detail, _fields) {
+        if (error) {
+            throw error;
+        } else {
+            res.json(detail);
+        }
+    });
+});
 
 
 
